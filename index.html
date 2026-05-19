@@ -320,7 +320,7 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptado</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
       <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
@@ -1116,9 +1116,10 @@ function renderRegsTable() {
     const m=S.materiales.find(x=>x.id===r.materialId);
     return `<tr>
       <td style="white-space:nowrap">${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${fmtHora(r.hora)}</span></td>
+      <td class="col-hide" style="font-size:12px;color:var(--muted)">${r.creadoNombre||r.usuarioNombre||'—'}</td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong></td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.observaciones||'—'}</td>
+      <td class="col-hide" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.observaciones||'—'}</td>
       <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" onerror="this.style.opacity='.3'" style="cursor:pointer">`:'<div class="no-photo"><i class="ti ti-camera"></i></div>'}</td>
       <td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td>
       <td><div class="row-actions">
