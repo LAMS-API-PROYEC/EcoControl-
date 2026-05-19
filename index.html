@@ -314,8 +314,8 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos en Google Sheets</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a Google Drive</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -450,7 +450,7 @@ tr:hover td{background:var(--gr50)}
         <div id="regs-table" style="display:none">
           <div class="tw">
             <table>
-              <thead><tr><th>Fecha / Hora</th><th>Material</th><th>Peso (kg)</th><th>Observaciones</th><th>Foto</th><th>Sync</th><th></th></tr></thead>
+              <thead><tr><th>Fecha / Hora</th><th class="col-hide">Usuario</th><th>Material</th><th>Peso (kg)</th><th class="col-hide">Observaciones</th><th>Foto</th><th>Sync</th><th></th></tr></thead>
               <tbody id="regs-tb"></tbody>
             </table>
             <div id="regs-empty" class="empty" style="display:none"><i class="ti ti-inbox"></i><p>Sin registros con esos filtros</p></div>
@@ -498,7 +498,7 @@ tr:hover td{background:var(--gr50)}
         </div>
         <div class="card">
           <h3 style="font-size:14px;margin-bottom:1rem">Detalle</h3>
-          <div class="tw"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Material</th><th>Peso (kg)</th><th>Observaciones</th><th>Foto</th></tr></thead><tbody id="rep-tb"></tbody></table></div>
+          <div class="tw"><table><thead><tr><th>FECHA / HORA</th><th>USUARIO</th><th>MATERIAL</th><th>PESO (KG)</th><th>OBSERVACIONES</th><th>FOTO</th></tr></thead><tbody id="rep-tb"></tbody></table></div>
         </div>
       </div>
       <div id="rep-empty" class="empty"><i class="ti ti-chart-pie"></i><p>Selecciona un período y genera el reporte</p></div>
@@ -719,9 +719,13 @@ tr:hover td{background:var(--gr50)}
 </div>
 
 <!-- Photo viewer -->
-<div class="modal-ov" id="m-photo" onclick="closeM('m-photo')">
-  <div class="modal" style="max-width:700px;background:transparent;box-shadow:none">
-    <img id="photo-full" src="" style="width:100%;border-radius:14px;max-height:82vh;object-fit:contain">
+<div class="modal-ov" id="m-photo">
+  <div style="position:relative;max-width:720px;width:100%">
+    <button onclick="closeM('m-photo')" style="position:absolute;top:-14px;right:-14px;z-index:10;width:36px;height:36px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#333;box-shadow:0 2px 10px rgba(0,0,0,.3)"><i class="ti ti-x"></i></button>
+    <img id="photo-full" src="" style="width:100%;border-radius:14px;max-height:85vh;object-fit:contain;display:block;background:#111">
+    <div id="photo-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:14px;background:rgba(0,0,0,.6)">
+      <div style="color:#fff;text-align:center"><div class="spin" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;margin:0 auto 8px"></div><div style="font-size:13px">Cargando imagen...</div></div>
+    </div>
   </div>
 </div>
 
@@ -751,6 +755,19 @@ function fmtFecha(iso){
   const yr = parseInt(p[0]);
   if(yr < 1900) return '—';
   return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+function fmtHora(val){
+  if(!val) return '';
+  const s=String(val);
+  // Si es ISO con T, extraer hora HH:MM
+  if(s.includes('T')){
+    const t=s.split('T')[1];
+    if(t) return t.slice(0,5);
+  }
+  // Si ya es HH:MM:SS o HH:MM
+  if(/^\d{1,2}:\d{2}/.test(s)) return s.slice(0,5);
+  return '';
 }
 
 // ══════════════════════════════════════════════
@@ -1002,7 +1019,7 @@ function renderDashboardData(dash) {
   document.getElementById('recent-tb').innerHTML = recent.map(r => {
     const m = S.materiales.find(x=>x.id===r.materialId);
     return `<tr>
-      <td>${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
+      <td>${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${fmtHora(r.hora)}</span></td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td>
       <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" style="cursor:pointer">` : '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td>
@@ -1049,7 +1066,7 @@ function renderRecentTb() {
   const recent=[...S.registros].sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora)).slice(0,8);
   document.getElementById('recent-tb').innerHTML=recent.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${(()=>{if(!r.fotoUrl) return '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'; return `<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" style="cursor:pointer">`;})()}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
+    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${fmtHora(r.hora)}</span></td><td class="col-hide" style="font-size:12px;color:var(--muted)">${r.creadoNombre||r.usuarioNombre||r.usuario||'—'}</td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${(()=>{if(!r.fotoUrl) return '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'; return `<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" style="cursor:pointer">`;})()}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
   }).join('')||'<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-inbox"></i><p>Sin registros</p></td></tr>';
 }
 
@@ -1091,7 +1108,7 @@ function renderRegsTable() {
   tbody.innerHTML=regs.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
     return `<tr>
-      <td style="white-space:nowrap">${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
+      <td style="white-space:nowrap">${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${fmtHora(r.hora)}</span></td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.observaciones||'—'}</td>
@@ -1467,7 +1484,7 @@ function renderReporte(data){
   // Table
   document.getElementById('rep-tb').innerHTML=(data.registros||[]).map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${r.fecha}</td><td>${r.hora||''}</td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td>${parseFloat(r.peso||0).toFixed(2)}</td><td>${r.observaciones||'—'}</td><td>${r.fotoUrl?`<a href="${r.fotoUrl}" target="_blank" style="color:var(--b400)"><i class="ti ti-external-link"></i> Ver</a>`:'—'}</td></tr>`;
+    return `<tr><td>${fmtFecha(r.fecha)}</td><td>${fmtHora(r.hora)}</td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td>${parseFloat(r.peso||0).toFixed(2)}</td><td>${r.observaciones||'—'}</td><td>${r.fotoUrl?`<a href="${r.fotoUrl}" target="_blank" style="color:var(--b400)"><i class="ti ti-external-link"></i> Ver</a>`:'—'}</td></tr>`;
   }).join('');
 }
 
@@ -1561,7 +1578,7 @@ function updateSyncBadge(){
 function getExportData(data){
   return data.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return{Fecha:r.fecha,Hora:r.hora||'',Material:r.materialNombre||m?.nombre||'',Peso:parseFloat(r.peso||0).toFixed(2),Unidad:m?.unidad||'kg',Observaciones:r.observaciones||'',Foto:r.fotoUrl?r.fotoUrl:'',Sync:r._offline?'Offline':'Sincronizado'};
+    return{Fecha:fmtFecha(r.fecha),Hora:fmtHora(r.hora),Usuario:r.creadoNombre||r.usuarioNombre||r.usuario||'',Material:r.materialNombre||m?.nombre||'',Peso:parseFloat(r.peso||0).toFixed(2),Unidad:m?.unidad||'kg',Observaciones:r.observaciones||'',Foto:r.fotoUrl?r.fotoUrl:'',Sync:r._offline?'Offline':'Sincronizado'};
   });
 }
 function exportExcel(){
@@ -1595,7 +1612,7 @@ function exportToPDF(data,titulo){
     head:[['Fecha','Hora','Material','Peso','Unidad','Observaciones','Foto']],
     body:data.map(r=>{
       const m=S.materiales.find(x=>x.id===r.materialId);
-      return[fmtFecha(r.fecha),r.hora||'',r.materialNombre||m?.nombre||'—',parseFloat(r.peso||0).toFixed(2),m?.unidad||'kg',r.observaciones||'—',r.fotoUrl?r.fotoUrl:'Sin foto'];
+      return[fmtFecha(r.fecha),fmtHora(r.hora),r.creadoNombre||r.usuarioNombre||r.usuario||'—',r.materialNombre||m?.nombre||'—',parseFloat(r.peso||0).toFixed(2),m?.unidad||'kg',r.observaciones||'—',r.fotoUrl?r.fotoUrl:'Sin foto'];
     }),
     styles:{fontSize:9,cellPadding:3},
     headStyles:{fillColor:[39,80,10],textColor:255},
@@ -1768,23 +1785,45 @@ function prevFoto(input){
   r.readAsDataURL(file);
 }
 
+function driveFullUrl(url){
+  if(!url) return url;
+  // Convertir URL de Drive a thumbnail grande (sz=w1200)
+  const m=url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1200';
+  return url;
+}
+
 function viewPhoto(src){
   if(!src) return;
   const modal=document.getElementById('m-photo');
   const img=document.getElementById('photo-full');
+  const loading=document.getElementById('photo-loading');
+  // Mostrar loading
+  loading.style.display='flex';
+  img.style.opacity='0';
+  img.onload=function(){ loading.style.display='none'; img.style.opacity='1'; };
+  img.onerror=function(){ loading.innerHTML='<div style="color:#fff;text-align:center"><i class="ti ti-photo-off" style="font-size:48px;opacity:.5"></i><div style="margin-top:8px;font-size:13px">No se pudo cargar la imagen</div></div>'; };
   img.src='';
-  img.src=src;
+  img.src=driveFullUrl(src);
   modal.classList.add('open');
 }
 const _photoUrls={};
 function viewPhotoIdx(idx){viewPhoto(_photoUrls[idx]);}
 
-// Delegación global para miniaturas con data-url
+// Clic en overlay para cerrar
 document.addEventListener('click', function(e){
+  // Abrir foto al hacer clic en miniatura
   const thumb = e.target.closest('img.photo-thumb');
   if(thumb && thumb.dataset.url){
-    e.stopPropagation();
     viewPhoto(thumb.dataset.url);
+    return;
+  }
+  // Cerrar modal de foto al hacer clic en el overlay (no en la imagen)
+  const photoModal = document.getElementById('m-photo');
+  if(photoModal && photoModal.classList.contains('open')){
+    if(e.target === photoModal || e.target.closest('#m-photo') === photoModal){
+      closeM('m-photo');
+    }
   }
 });
 function openM(id){document.getElementById(id).classList.add('open');}
