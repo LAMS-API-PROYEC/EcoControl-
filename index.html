@@ -320,8 +320,8 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptados</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptadas</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas en los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -1090,15 +1090,23 @@ function renderRegs() {
 function filterRegs() {
   const desde=document.getElementById('f-desde').value;
   const hasta=document.getElementById('f-hasta').value;
-  const matId=document.getElementById('f-mat').value;
+  const matId=(document.getElementById('f-mat').value||'').trim();
   const q=document.getElementById('f-q').value.toLowerCase();
   S.filteredRegs=[...S.registros,...S.pendingQueue].filter(r=>{
-    if(desde && r.fecha<desde) return false;
-    if(hasta && r.fecha>hasta) return false;
-    if(matId && r.materialId!==matId) return false;
-    if(q){const s=(r.materialNombre||'')+(r.observaciones||'')+r.fecha; if(!s.toLowerCase().includes(q)) return false;}
+    const fecha=normFecha(r.fecha);
+    if(desde && fecha < desde) return false;
+    if(hasta && fecha > hasta) return false;
+    if(matId){
+      const rMatId=String(r.materialId||'').trim();
+      const rMatNom=(r.materialNombre||'').toLowerCase();
+      // Buscar el material seleccionado por id o nombre
+      const selMat=S.materiales.find(m=>String(m.id||'').trim()===matId);
+      const matOk = rMatId===matId || (selMat && rMatNom===(selMat.nombre||'').toLowerCase());
+      if(!matOk) return false;
+    }
+    if(q){const s=(r.materialNombre||'')+(r.observaciones||'')+(r.creadoNombre||'')+fecha; if(!s.toLowerCase().includes(q)) return false;}
     return true;
-  }).sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora));
+  }).sort((a,b)=>normFecha(b.fecha).localeCompare(normFecha(a.fecha))||String(b.hora||'').localeCompare(String(a.hora||'')));
   renderRegsTable();
 }
 
@@ -1477,15 +1485,19 @@ async function genReporte(){
   document.getElementById('rep-content').style.display='none';
   document.getElementById('rep-loader').style.display='flex';
 
-  // Filtrar SIEMPRE sobre S.registros locales (más confiable que el API con fechas ISO)
+  // Filtrar sobre S.registros locales
   let base = S.registros;
-
-  // Si hay registros en cache, filtrar directamente
   reportData = base.filter(r=>{
     const f = normFecha(r.fecha);
     if(desde && f < desde) return false;
     if(hasta && f > hasta) return false;
-    if(matId && matId !== 'all' && matId !== '' && r.materialId !== matId) return false;
+    if(matId && matId !== 'all' && matId !== ''){
+      const rMatId=String(r.materialId||'').trim();
+      const rMatNom=(r.materialNombre||'').toLowerCase();
+      const selMat=S.materiales.find(m=>String(m.id||'').trim()===matId);
+      const matOk=rMatId===matId||(selMat&&rMatNom===(selMat.nombre||'').toLowerCase());
+      if(!matOk) return false;
+    }
     return true;
   });
 
