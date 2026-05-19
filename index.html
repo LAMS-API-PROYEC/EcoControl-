@@ -551,7 +551,8 @@ tr:hover td{background:var(--gr50)}
 // ══════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════
-let API_URL = localStorage.getItem('eco_api_url') || 'https://script.google.com/macros/s/AKfycbyGnr0qC7iN4NOyF6e8QdY3_h1bp2eiG7cRHfxLj5UrVujqTjmjiRVKD6EczffU3MQ/exec';
+const _savedUrl = localStorage.getItem('eco_api_url');
+let API_URL = (_savedUrl && _savedUrl.trim()) ? _savedUrl : 'https://script.google.com/macros/s/AKfycbyGnr0qC7iN4NOyF6e8QdY3_h1bp2eiG7cRHfxLj5UrVujqTjmjiRVKD6EczffU3MQ/exec';
 
 // ══════════════════════════════════════════════
 //  STATE
