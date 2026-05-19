@@ -320,7 +320,7 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptados</span></div>
       <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
@@ -1231,12 +1231,15 @@ async function delReg(id) {
 function renderMats() {
   const isAdmin = S.user.rol === 'admin';
   document.getElementById('mats-tb').innerHTML = S.materiales.map(m => {
-    // Cruzar por materialId O por nombre (fallback) para mayor compatibilidad
+    // Cruzar por materialId (normalizado) O por nombre
     const allRegs = [...S.registros, ...S.pendingQueue];
-    const regs = allRegs.filter(r =>
-      r.materialId === m.id ||
-      (!r.materialId && (r.materialNombre||'').toLowerCase() === (m.nombre||'').toLowerCase())
-    );
+    const mId = String(m.id||'').trim();
+    const mNom = (m.nombre||'').toLowerCase().trim();
+    const regs = allRegs.filter(r => {
+      const rId = String(r.materialId||'').trim();
+      const rNom = (r.materialNombre||'').toLowerCase().trim();
+      return rId === mId || rNom === mNom;
+    });
     const total = regs.reduce((s,r) => s + (parseFloat(r.peso)||0), 0);
     const activo = m.estado === 'activo';
     const toggleBtn = isAdmin ? `
@@ -1253,7 +1256,7 @@ function renderMats() {
       <td>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="flex:1;max-width:120px;height:7px;background:var(--bg2);border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${Math.min((total/Math.max(...S.materiales.map(x=>{const rs=allRegs.filter(r=>r.materialId===x.id);return rs.reduce((s,r2)=>s+(parseFloat(r2.peso)||0),0);}),1))*100,100).toFixed(0)}%;background:${m.color};border-radius:4px"></div>
+            <div style="height:100%;width:${Math.min((total/Math.max(...S.materiales.map(x=>{const xId=String(x.id||'').trim();const xNom=(x.nombre||'').toLowerCase().trim();const rs=allRegs.filter(r=>String(r.materialId||'').trim()===xId||(r.materialNombre||'').toLowerCase().trim()===xNom);return rs.reduce((s,r2)=>s+(parseFloat(r2.peso)||0),0);}),1))*100,100).toFixed(0)}%;background:${m.color};border-radius:4px"></div>
           </div>
           <strong>${total.toFixed(1)}</strong> <span style="color:var(--muted);font-size:12px">${m.unidad||'kg'}</span>
         </div>
