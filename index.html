@@ -98,7 +98,13 @@ a{color:inherit;text-decoration:none}
 /* ─── CARDS ──────────────────────────────── */
 .card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:1.25rem 1.5rem;box-shadow:var(--shadow)}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.4rem}
-.stat-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem}
+.stat-card{background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem;transition:box-shadow .15s}
+.stat-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.stat-card.sc-g{border-left:4px solid var(--g500)}
+.stat-card.sc-b{border-left:4px solid var(--b400)}
+.stat-card.sc-a{border-left:4px solid var(--a400)}
+.stat-card.sc-t{border-left:4px solid var(--t500)}
+.stat-card.sc-r{border-left:4px solid var(--r400)}
 .stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
 .stat-value{font-size:1.9rem;font-weight:700;font-family:'Space Grotesk';line-height:1;margin-bottom:3px}
 .stat-sub{font-size:11.5px;color:var(--muted)}
@@ -314,8 +320,8 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos en Google Sheets</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a Google Drive</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -413,10 +419,10 @@ tr:hover td{background:var(--gr50)}
     <!-- DASHBOARD -->
     <div class="content page active" id="page-dashboard">
       <div class="stats-grid">
-        <div class="stat-card"><div class="stat-label">Total mes</div><div class="stat-value sv-g" id="s-total">—</div><div class="stat-sub">kg recolectados</div></div>
-        <div class="stat-card"><div class="stat-label">Registros mes</div><div class="stat-value sv-b" id="s-regs">—</div><div class="stat-sub">este mes</div></div>
-        <div class="stat-card"><div class="stat-label">Materiales</div><div class="stat-value sv-a" id="s-mats">—</div><div class="stat-sub">activos</div></div>
-        <div class="stat-card"><div class="stat-label">Pendiente sync</div><div class="stat-value sv-t" id="s-pend">0</div><div class="stat-sub">registros offline</div></div>
+        <div class="stat-card sc-g"><div class="stat-label"><i class="ti ti-weight" style="color:var(--g600);margin-right:4px"></i>Total mes</div><div class="stat-value sv-g" id="s-total">—</div><div class="stat-sub">kg recolectados</div></div>
+        <div class="stat-card sc-b"><div class="stat-label"><i class="ti ti-clipboard-list" style="color:var(--b500);margin-right:4px"></i>Registros mes</div><div class="stat-value sv-b" id="s-regs">—</div><div class="stat-sub">este mes</div></div>
+        <div class="stat-card sc-a"><div class="stat-label"><i class="ti ti-recycle" style="color:var(--a400);margin-right:4px"></i>Materiales</div><div class="stat-value sv-a" id="s-mats">—</div><div class="stat-sub">activos</div></div>
+        <div class="stat-card sc-r"><div class="stat-label"><i class="ti ti-cloud-off" style="color:var(--r400);margin-right:4px"></i>Pendiente sync</div><div class="stat-value sv-t" id="s-pend">0</div><div class="stat-sub">registros offline</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="report-grids">
         <div class="card">
@@ -987,7 +993,8 @@ function closeSidebar() {
 function renderDashboard() {
   const now = new Date();
   const delMes = S.registros.filter(r => {
-    const d = new Date(r.fecha);
+    const fd=String(r.fecha||'').includes('T')?String(r.fecha).split('T')[0]:String(r.fecha||'');
+    const d = new Date(fd+'T12:00:00');
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
   const totalKg = delMes.reduce((s,r) => s + (parseFloat(r.peso)||0), 0);
@@ -1013,7 +1020,7 @@ function renderDashboardData(dash) {
   const dias = dash.ultimos7 || [];
   const maxD = Math.max(...dias.map(d=>d.total), 0.1);
   document.getElementById('ch-dias').innerHTML = dias.map(d => `
-    <div class="cb-row"><div class="cb-label">${d.dia}</div><div class="cb-track"><div class="cb-fill" style="width:${(d.total/maxD*100).toFixed(1)}%;background:var(--t400)"></div></div><div class="cb-val">${d.total.toFixed(1)}</div></div>`).join('');
+    <div class="cb-row"><div class="cb-label">${d.dia}</div><div class="cb-track"><div class="cb-fill" style="width:${(d.total/maxD*100).toFixed(1)}%;background:${d.total>0?'var(--g500)':'var(--border)'}"></div></div><div class="cb-val" style="color:${d.total>0?'var(--g700)':'var(--muted)'}">${d.total.toFixed(1)}</div></div>`).join('');
   // Recent
   const recent = (dash.ultimosRegistros||[]).slice(0,8);
   document.getElementById('recent-tb').innerHTML = recent.map(r => {
@@ -1055,7 +1062,7 @@ function renderChartDias() {
   for (let i=6;i>=0;i--){
     const d=new Date(); d.setDate(d.getDate()-i);
     const k=d.toISOString().slice(0,10);
-    const total=S.registros.filter(r=>r.fecha===k).reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
+    const total=S.registros.filter(r=>{const fd=String(r.fecha||'').includes('T')?String(r.fecha).split('T')[0]:String(r.fecha||'');return fd===k;}).reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
     days.push({dia:d.toLocaleDateString('es',{weekday:'short'}),total});
   }
   const max=Math.max(...days.map(d=>d.total),0.1);
@@ -1449,15 +1456,17 @@ async function genReporte(){
   document.getElementById('rep-content').style.display='none';
   document.getElementById('rep-loader').style.display='flex';
   try{
-    const data=await api('getReporte',{filters:{desde,hasta,materialId:matId}});
+    const data=await api('getReporte',{filters:{desde,hasta,materialId:(matId&&matId!=='all')?matId:undefined}});
     reportData=data.registros||[];
     renderReporte(data);
   }catch(e){
     // offline
     reportData=S.registros.filter(r=>{
-      if(desde&&r.fecha<desde) return false;
-      if(hasta&&r.fecha>hasta) return false;
-      if(matId&&r.materialId!==matId) return false;
+      // Normalizar fecha (puede venir como ISO completo)
+      const fechaR = String(r.fecha||'').includes('T') ? String(r.fecha).split('T')[0] : String(r.fecha||'');
+      if(desde && fechaR < desde) return false;
+      if(hasta && fechaR > hasta) return false;
+      if(matId && matId !== 'all' && r.materialId !== matId) return false;
       return true;
     });
     const totalKg=reportData.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
@@ -1469,10 +1478,10 @@ async function genReporte(){
 function renderReporte(data){
   document.getElementById('rep-content').style.display='';
   document.getElementById('rep-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Total peso</div><div class="stat-value sv-g">${parseFloat(data.totalKg||0).toFixed(1)}</div><div class="stat-sub">kg</div></div>
-    <div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value sv-b">${data.count||0}</div><div class="stat-sub">total</div></div>
-    <div class="stat-card"><div class="stat-label">Promedio</div><div class="stat-value sv-a">${parseFloat(data.promedio||0).toFixed(1)}</div><div class="stat-sub">kg/registro</div></div>
-    <div class="stat-card"><div class="stat-label">Materiales</div><div class="stat-value sv-t">${Object.keys(data.porMaterial||{}).length}</div><div class="stat-sub">diferentes</div></div>`;
+    <div class="stat-card sc-g"><div class="stat-label"><i class="ti ti-weight" style="color:var(--g600);margin-right:4px"></i>Total peso</div><div class="stat-value sv-g">${parseFloat(data.totalKg||0).toFixed(1)}</div><div class="stat-sub">kg</div></div>
+    <div class="stat-card sc-b"><div class="stat-label"><i class="ti ti-clipboard-list" style="color:var(--b500);margin-right:4px"></i>Registros</div><div class="stat-value sv-b">${data.count||0}</div><div class="stat-sub">total</div></div>
+    <div class="stat-card sc-a"><div class="stat-label"><i class="ti ti-chart-bar" style="color:var(--a400);margin-right:4px"></i>Promedio</div><div class="stat-value sv-a">${parseFloat(data.promedio||0).toFixed(1)}</div><div class="stat-sub">kg/registro</div></div>
+    <div class="stat-card sc-t"><div class="stat-label"><i class="ti ti-recycle" style="color:var(--t600);margin-right:4px"></i>Materiales</div><div class="stat-value sv-t">${Object.keys(data.porMaterial||{}).length}</div><div class="stat-sub">diferentes</div></div>`;
   // Charts
   const matEntries=Object.entries(data.porMaterial||{}).map(([id,v])=>{
     const m=S.materiales.find(x=>x.id===id);
@@ -1597,27 +1606,123 @@ function exportRepExcel(){
 }
 function exportRepPDF(){exportToPDF(reportData,'Reporte de Materiales');}
 
-function exportToPDF(data,titulo){
+async function imgToBase64(url){
+  // Convierte URL de Drive a thumbnail y la descarga como base64
+  if(!url) return null;
+  try{
+    const thumbUrl = driveFullUrl(url).replace('sz=w1200','sz=w200');
+    const res = await fetch(thumbUrl);
+    if(!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise(resolve=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(reader.result);
+      reader.onerror=()=>resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){return null;}
+}
+
+async function exportToPDF(data, titulo){
+  showToast('i','Generando PDF con fotos...');
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape'});
   const c=S.company;
+  const ROW_H=22; // altura de fila con foto
+  const IMG_W=28;
+  const IMG_H=18;
+
+  // Pre-cargar todas las fotos en paralelo (máx 20 para no demorar)
+  const registros=data.slice(0,200);
+  const fotoPromises=registros.map(r=>r.fotoUrl?imgToBase64(r.fotoUrl):Promise.resolve(null));
+  const fotos=await Promise.all(fotoPromises);
+
+  // Cabecera del doc
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
   doc.text('EcoControl — '+titulo,14,18);
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
   doc.text(`Empresa: ${c.nombre}  |  Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'})}  |  Registros: ${data.length}`,14,26);
   const totalKg=data.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
   doc.text(`Peso total: ${totalKg.toFixed(2)} kg`,14,32);
-  doc.autoTable({
-    startY:38,
-    head:[['Fecha','Hora','Material','Peso','Unidad','Observaciones','Foto']],
-    body:data.map(r=>{
-      const m=S.materiales.find(x=>x.id===r.materialId);
-      return[fmtFecha(r.fecha),fmtHora(r.hora),r.creadoNombre||r.usuarioNombre||r.usuario||'—',r.materialNombre||m?.nombre||'—',parseFloat(r.peso||0).toFixed(2),m?.unidad||'kg',r.observaciones||'—',r.fotoUrl?r.fotoUrl:'Sin foto'];
-    }),
-    styles:{fontSize:9,cellPadding:3},
-    headStyles:{fillColor:[39,80,10],textColor:255},
-    alternateRowStyles:{fillColor:[244,246,241]},
+
+  // Columnas: Fecha, Usuario, Material, Peso, Obs, Foto
+  const cols=[{h:'Fecha/Hora',w:28},{h:'Usuario',w:28},{h:'Material',w:32},{h:'Peso (kg)',w:22},{h:'Unidad',w:16},{h:'Observaciones',w:52},{h:'Foto',w:32}];
+  const totalW=cols.reduce((s,c)=>s+c.w,0); // ~210
+  let y=40;
+  const marginL=14;
+  const pageH=doc.internal.pageSize.getHeight();
+
+  // Helper dibujar cabecera de tabla
+  function drawHeader(){
+    doc.setFillColor(39,80,10); doc.setTextColor(255);
+    doc.rect(marginL,y,totalW,8,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    let x=marginL;
+    cols.forEach(col=>{
+      doc.text(col.h,x+2,y+5.5);
+      x+=col.w;
+    });
+    doc.setTextColor(0); doc.setFont('helvetica','normal');
+    y+=8;
+  }
+  drawHeader();
+
+  // Filas
+  registros.forEach((r,i)=>{
+    if(y+ROW_H>pageH-12){
+      doc.addPage();
+      y=14;
+      drawHeader();
+    }
+    const m=S.materiales.find(x=>x.id===r.materialId);
+    const rowData=[
+      fmtFecha(r.fecha)+'
+'+fmtHora(r.hora),
+      r.creadoNombre||r.usuario||'—',
+      r.materialNombre||m?.nombre||'—',
+      parseFloat(r.peso||0).toFixed(2),
+      m?.unidad||'kg',
+      r.observaciones||'—',
+    ];
+    // Fondo alternado
+    if(i%2===0){doc.setFillColor(244,246,241);doc.rect(marginL,y,totalW,ROW_H,'F');}
+    // Borde fila
+    doc.setDrawColor(220,220,220);
+    doc.rect(marginL,y,totalW,ROW_H,'S');
+    // Texto celdas
+    doc.setFontSize(8);
+    let x=marginL;
+    rowData.forEach((txt,ci)=>{
+      const lines=doc.splitTextToSize(String(txt),cols[ci].w-3);
+      doc.text(lines,x+2,y+4.5);
+      x+=cols[ci].w;
+    });
+    // Foto: miniatura o link clickeable
+    const fotoBase64=fotos[i];
+    const fotoX=marginL+cols.slice(0,-1).reduce((s,c)=>s+c.w,0);
+    if(fotoBase64){
+      try{
+        doc.addImage(fotoBase64,'JPEG',fotoX+2,y+2,IMG_W,IMG_H);
+      }catch(e){
+        // fallback a link si falla la imagen
+        if(r.fotoUrl){
+          doc.setTextColor(0,102,204);
+          doc.textWithLink('Ver foto',fotoX+3,y+6,{url:r.fotoUrl});
+          doc.setTextColor(0);
+        }
+      }
+    } else if(r.fotoUrl){
+      doc.setTextColor(0,102,204);
+      doc.textWithLink('Ver foto',fotoX+3,y+6,{url:r.fotoUrl});
+      doc.setTextColor(0);
+    } else {
+      doc.setTextColor(160,160,160);
+      doc.text('Sin foto',fotoX+3,y+6);
+      doc.setTextColor(0);
+    }
+    y+=ROW_H;
   });
+
   doc.save(`EcoControl_${titulo.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
   showToast('s','PDF exportado');
 }
