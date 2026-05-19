@@ -320,7 +320,7 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptado</span></div>
       <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
@@ -1448,6 +1448,12 @@ async function delUsr(id) {
 //  REPORTES
 // ══════════════════════════════════════════════
 let reportData=[];
+function normFecha(f){
+  if(!f) return '';
+  const s=String(f);
+  return s.includes('T')?s.split('T')[0]:s;
+}
+
 async function genReporte(){
   const desde=document.getElementById('r-desde').value;
   const hasta=document.getElementById('r-hasta').value;
@@ -1455,24 +1461,52 @@ async function genReporte(){
   document.getElementById('rep-empty').style.display='none';
   document.getElementById('rep-content').style.display='none';
   document.getElementById('rep-loader').style.display='flex';
-  try{
-    const data=await api('getReporte',{filters:{desde,hasta,materialId:(matId&&matId!=='all')?matId:undefined}});
-    reportData=data.registros||[];
-    renderReporte(data);
-  }catch(e){
-    // offline
-    reportData=S.registros.filter(r=>{
-      // Normalizar fecha (puede venir como ISO completo)
-      const fechaR = String(r.fecha||'').includes('T') ? String(r.fecha).split('T')[0] : String(r.fecha||'');
-      if(desde && fechaR < desde) return false;
-      if(hasta && fechaR > hasta) return false;
-      if(matId && matId !== 'all' && r.materialId !== matId) return false;
-      return true;
-    });
-    const totalKg=reportData.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
-    renderReporte({totalKg,count:reportData.length,promedio:reportData.length?(totalKg/reportData.length):0,porMaterial:{},porSemana:{},registros:reportData});
+
+  // Filtrar SIEMPRE sobre S.registros locales (más confiable que el API con fechas ISO)
+  let base = S.registros;
+
+  // Si hay registros en cache, filtrar directamente
+  reportData = base.filter(r=>{
+    const f = normFecha(r.fecha);
+    if(desde && f < desde) return false;
+    if(hasta && f > hasta) return false;
+    if(matId && matId !== 'all' && matId !== '' && r.materialId !== matId) return false;
+    return true;
+  });
+
+  // Si no hay datos locales, intentar API
+  if(!base.length && S.isOnline){
+    try{
+      const data=await api('getReporte',{filters:{desde,hasta,materialId:(matId&&matId!=='all')?matId:undefined}});
+      reportData=data.registros||[];
+    }catch(e){ reportData=[]; }
   }
+
+  // Calcular totales
+  const totalKg=reportData.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
+  const byMat={};
+  const bySem={};
+  reportData.forEach(r=>{
+    const m=S.materiales.find(x=>x.id===r.materialId);
+    const nombre=r.materialNombre||m?.nombre||'Otros';
+    const id=r.materialId||'otros';
+    if(!byMat[id]) byMat[id]={nombre,total:0};
+    byMat[id].total+=parseFloat(r.peso)||0;
+    // Por semana — agrupar por fecha normalizada (día)
+    const f=normFecha(r.fecha);
+    if(!bySem[f]) bySem[f]=0;
+    bySem[f]+=parseFloat(r.peso)||0;
+  });
+
   document.getElementById('rep-loader').style.display='none';
+  renderReporte({
+    totalKg,
+    count:reportData.length,
+    promedio:reportData.length?totalKg/reportData.length:0,
+    porMaterial:byMat,
+    porSemana:bySem,
+    registros:reportData
+  });
 }
 
 function renderReporte(data){
@@ -1493,7 +1527,7 @@ function renderReporte(data){
   // Table
   document.getElementById('rep-tb').innerHTML=(data.registros||[]).map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${fmtFecha(r.fecha)}</td><td>${fmtHora(r.hora)}</td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td>${parseFloat(r.peso||0).toFixed(2)}</td><td>${r.observaciones||'—'}</td><td>${r.fotoUrl?`<a href="${r.fotoUrl}" target="_blank" style="color:var(--b400)"><i class="ti ti-external-link"></i> Ver</a>`:'—'}</td></tr>`;
+    return `<tr><td style='white-space:nowrap'>${fmtFecha(r.fecha)}<br><small style='color:var(--muted)'>${fmtHora(r.hora)}</small></td><td style='font-size:12px;color:var(--muted)'>${r.creadoNombre||r.usuario||'—'}</td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong></td><td style='font-size:12px;max-width:140px'>${r.observaciones||'—'}</td><td>${r.fotoUrl?`<a href="${r.fotoUrl}" target="_blank" style="color:var(--b400)"><i class="ti ti-external-link"></i> Ver foto</a>`:'—'}</td></tr>`;
   }).join('');
 }
 
