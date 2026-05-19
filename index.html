@@ -315,7 +315,7 @@ tr:hover td{background:var(--gr50)}
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
       <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas en los reportes</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -514,7 +514,7 @@ tr:hover td{background:var(--gr50)}
         <div id="empresas-loader" class="loader"><div class="spin"></div>Cargando...</div>
         <div class="tw" id="empresas-table" style="display:none">
           <table>
-            <thead><tr><th>Empresa</th><th>RUC</th><th>Teléfono</th><th>Usuarios</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Empresa</th><th>RUC</th><th>Dirección</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody id="empresas-tb"></tbody>
           </table>
         </div>
@@ -673,6 +673,9 @@ tr:hover td{background:var(--gr50)}
       <div class="form-g"><label>Nombre *</label><input type="text" id="us-nombre" class="fc"></div>
       <div class="form-g"><label>Email *</label><input type="email" id="us-email" class="fc"></div>
       <div class="form-g"><label>Contraseña *</label><input type="password" id="us-pass" class="fc" placeholder="mín. 6 caracteres"></div>
+      <div class="form-g" id="us-empresa-field" style="display:none"><label>Empresa *</label>
+        <select id="us-empresa" class="fc"><option value="">Selecciona empresa...</option></select>
+      </div>
       <div class="form-g"><label>Rol</label>
         <select id="us-rol" class="fc">
           <option value="operador">Operador — solo registrar pesos</option>
@@ -703,12 +706,14 @@ tr:hover td{background:var(--gr50)}
         <div class="form-g"><label>Teléfono</label><input type="text" id="emp-tel" class="fc" placeholder="+593..."></div>
       </div>
       <div class="form-g"><label>Dirección</label><input type="text" id="emp-dir" class="fc" placeholder="Av. Principal 123"></div>
-      <div class="form-g"><label>Email admin *</label><input type="email" id="emp-email" class="fc" placeholder="admin@empresa.com"></div>
-      <div class="form-g"><label>Contraseña admin *</label><input type="password" id="emp-pass" class="fc" placeholder="Mínimo 6 caracteres"></div>
+      <div id="emp-new-fields">
+        <div class="form-g"><label>Email admin *</label><input type="email" id="emp-email" class="fc" placeholder="admin@empresa.com"></div>
+        <div class="form-g"><label>Contraseña admin *</label><input type="password" id="emp-pass" class="fc" placeholder="Mínimo 6 caracteres"></div>
+      </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-secondary btn-sm" onclick="closeM('m-empresa')">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="saveEmpresaModal()" style="width:auto"><i class="ti ti-building-plus"></i> Crear empresa</button>
+      <button class="btn btn-primary btn-sm" id="emp-save-btn" onclick="saveEmpresaModal()" style="width:auto"><i class="ti ti-device-floppy"></i> Guardar</button>
     </div>
   </div>
 </div>
@@ -1000,7 +1005,7 @@ function renderDashboardData(dash) {
       <td>${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td>
-      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">` : '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td>
+      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" style="cursor:pointer">` : '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td>
       <td><span class="badge badge-g">✓ Sync</span></td>
     </tr>`;
   }).join('');
@@ -1044,7 +1049,7 @@ function renderRecentTb() {
   const recent=[...S.registros].sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora)).slice(0,8);
   document.getElementById('recent-tb').innerHTML=recent.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${(()=>{if(!r.fotoUrl) return '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'; const idx='d'+r.id; _photoUrls[idx]=r.fotoUrl; return `<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhotoIdx('${idx}')" onerror="this.style.display='none'">`;})()}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
+    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${(()=>{if(!r.fotoUrl) return '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'; return `<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" style="cursor:pointer">`;})()}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
   }).join('')||'<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-inbox"></i><p>Sin registros</p></td></tr>';
 }
 
@@ -1090,7 +1095,7 @@ function renderRegsTable() {
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.observaciones||'—'}</td>
-      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">`:'<div class="no-photo"><i class="ti ti-camera"></i></div>'}</td>
+      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" data-url="${r.fotoUrl}" onerror="this.style.opacity='.3'" style="cursor:pointer">`:'<div class="no-photo"><i class="ti ti-camera"></i></div>'}</td>
       <td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td>
       <td><div class="row-actions">
         ${canEdit?`<button class="icon-btn edit" onclick="editReg('${r.id}')"><i class="ti ti-edit"></i></button>`:''}
@@ -1367,6 +1372,16 @@ function openNewUsr() {
   document.getElementById('us-rol').value     = 'operador';
   document.getElementById('m-usr-title').textContent = 'Nuevo usuario';
   document.getElementById('us-pass').placeholder = 'Mínimo 6 caracteres';
+  // Si es superadmin (tiene acceso a todas las empresas) mostrar selector
+  const empField = document.getElementById('us-empresa-field');
+  const empSel   = document.getElementById('us-empresa');
+  if(_allEmpresas && _allEmpresas.length > 0) {
+    empField.style.display = '';
+    empSel.innerHTML = '<option value="">— Misma empresa —</option>' +
+      _allEmpresas.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  } else {
+    empField.style.display = 'none';
+  }
   openM('m-usr');
 }
 async function saveUsr() {
@@ -1384,7 +1399,8 @@ async function saveUsr() {
       showToast('s','Usuario actualizado');
     } else {
       if (!pass) return showToast('e','Contraseña requerida');
-      const res = await api('createUsuario', { nombre, email, pass, rol });
+      const empId = document.getElementById('us-empresa')?.value||'';
+      const res = await api('createUsuario', { nombre, email, pass, rol, targetCompanyId: empId||undefined });
       S.usuarios.push(res);
       showToast('s','Usuario creado');
     }
@@ -1612,7 +1628,7 @@ function renderEmpresas() {
   document.getElementById('empresas-table').style.display='';
   const tbody = document.getElementById('empresas-tb');
   if(!_allEmpresas.length){
-    tbody.innerHTML='<tr><td colspan="6" class="empty" style="padding:1.5rem"><i class="ti ti-building" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px"></i><p>Sin empresas registradas</p></td></tr>';
+    tbody.innerHTML='<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-building" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px"></i><p>Sin empresas registradas</p></td></tr>';
     return;
   }
   tbody.innerHTML = _allEmpresas.map(e => {
@@ -1623,46 +1639,81 @@ function renderEmpresas() {
         <div><div style="font-weight:500">${e.nombre||'—'}</div><div style="font-size:11px;color:var(--muted)">${e.email||''}</div></div>
       </div></td>
       <td style="font-size:12px">${e.ruc||'—'}</td>
-      <td style="font-size:12px">${e.telefono||'—'}</td>
-      <td><span class="badge badge-b">Ver usuarios</span></td>
+      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.direccion||'—'}</td>
       <td><span class="badge ${activo?'badge-g':'badge-r'}">${activo?'Activa':'Inactiva'}</span></td>
       <td><div class="row-actions">
-        <button class="icon-btn del" onclick="toggleEmpresa('${e.id}','${e.estado}')" title="${activo?'Desactivar':'Activar'}"><i class="ti ti-${activo?'lock':'lock-open'}"></i></button>
+        <button class="icon-btn edit" onclick="openEditEmpresa('${e.id}')" title="Editar"><i class="ti ti-edit"></i></button>
+        <button class="icon-btn" onclick="toggleEmpresa('${e.id}','${e.estado}')" title="${activo?'Desactivar':'Activar'}" style="color:var(--${activo?'a400':'g600'})"><i class="ti ti-${activo?'lock':'lock-open'}"></i></button>
+        <button class="icon-btn del" onclick="delEmpresa('${e.id}','${e.nombre}')" title="Eliminar empresa"><i class="ti ti-trash"></i></button>
       </div></td>
     </tr>`;
   }).join('');
+}
+
+function openEditEmpresa(id) {
+  const e = _allEmpresas.find(x=>x.id===id); if(!e) return;
+  document.getElementById('emp-id').value = id;
+  document.getElementById('emp-nombre').value = e.nombre||'';
+  document.getElementById('emp-ruc').value = e.ruc||'';
+  document.getElementById('emp-tel').value = e.telefono||'';
+  document.getElementById('emp-dir').value = e.direccion||'';
+  document.getElementById('emp-new-fields').style.display='none';
+  document.getElementById('m-emp-title').textContent='Editar Empresa';
+  document.getElementById('emp-save-btn').innerHTML='<i class="ti ti-device-floppy"></i> Actualizar';
+  openM('m-empresa');
+}
+
+async function delEmpresa(id, nombre) {
+  if(!confirm(`¿Eliminar la empresa "${nombre}" y TODOS sus registros, usuarios y materiales?
+
+Esta acción NO se puede deshacer.`)) return;
+  try {
+    await api('deleteEmpresa', {empresaId: id});
+    showToast('s','Empresa eliminada');
+    await loadEmpresas();
+  } catch(e) { showToast('e', e.message); }
 }
 
 function openNewEmpresaModal() {
   document.getElementById('emp-id').value='';
   document.getElementById('m-emp-title').textContent='Nueva Empresa';
   ['emp-nombre','emp-ruc','emp-tel','emp-dir','emp-email','emp-pass'].forEach(id=>{
-    document.getElementById(id).value='';
+    const el=document.getElementById(id); if(el) el.value='';
   });
+  document.getElementById('emp-new-fields').style.display='';
+  document.getElementById('emp-save-btn').innerHTML='<i class="ti ti-building-plus"></i> Crear empresa';
   openM('m-empresa');
 }
 
 async function saveEmpresaModal() {
+  const editId = document.getElementById('emp-id').value;
   const nombre = document.getElementById('emp-nombre').value.trim();
-  const email  = document.getElementById('emp-email').value.trim();
-  const pass   = document.getElementById('emp-pass').value;
   const ruc    = document.getElementById('emp-ruc').value.trim();
   const tel    = document.getElementById('emp-tel').value.trim();
   const dir    = document.getElementById('emp-dir').value.trim();
-  if(!nombre||!email||!pass) return showToast('e','Nombre, email y contraseña son requeridos');
-  if(pass.length<6) return showToast('e','Contraseña mínimo 6 caracteres');
+  if(!nombre) return showToast('e','Nombre de empresa requerido');
   try {
-    // Temporarily swap company to register new one
-    const savedToken = S.token;
-    // Use register endpoint - needs no token
-    const res = await fetch(API_URL+'?action=register', {
-      method:'POST',
-      body: JSON.stringify({empresa:nombre, nombre:'Admin', email, pass, telefono:tel, ruc, direccion:dir}),
-      headers:{'Content-Type':'text/plain'}
-    });
-    const json = await res.json();
-    if(!json.ok) throw new Error(json.error||'Error al crear empresa');
-    showToast('s','Empresa creada correctamente');
+    if(editId) {
+      // Editar empresa existente
+      await api('updateEmpresa', {empresaId:editId, nombre, ruc, telefono:tel, direccion:dir});
+      const e=_allEmpresas.find(x=>x.id===editId);
+      if(e){e.nombre=nombre;e.ruc=ruc;e.telefono=tel;e.direccion=dir;}
+      showToast('s','Empresa actualizada');
+    } else {
+      // Nueva empresa
+      const email = document.getElementById('emp-email').value.trim();
+      const pass  = document.getElementById('emp-pass').value;
+      if(!email||!pass) return showToast('e','Email y contraseña requeridos para nueva empresa');
+      if(pass.length<6) return showToast('e','Contraseña mínimo 6 caracteres');
+      const res = await fetch(API_URL+'?action=register', {
+        method:'POST',
+        body: JSON.stringify({empresa:nombre, nombre:'Admin', email, pass, telefono:tel, ruc, direccion:dir}),
+        headers:{'Content-Type':'text/plain'}
+      });
+      const json = await res.json();
+      if(!json.ok) throw new Error(json.error||'Error al crear empresa');
+      showToast('s','Empresa creada correctamente');
+    }
     closeM('m-empresa');
     await loadEmpresas();
   } catch(e) { showToast('e', e.message); }
@@ -1718,14 +1769,24 @@ function prevFoto(input){
 }
 
 function viewPhoto(src){
+  if(!src) return;
+  const modal=document.getElementById('m-photo');
   const img=document.getElementById('photo-full');
-  img.src=''; // reset first
+  img.src='';
   img.src=src;
-  openM('m-photo');
+  modal.classList.add('open');
 }
-// Store photo URLs by index to avoid escaping issues in onclick
 const _photoUrls={};
 function viewPhotoIdx(idx){viewPhoto(_photoUrls[idx]);}
+
+// Delegación global para miniaturas con data-url
+document.addEventListener('click', function(e){
+  const thumb = e.target.closest('img.photo-thumb');
+  if(thumb && thumb.dataset.url){
+    e.stopPropagation();
+    viewPhoto(thumb.dataset.url);
+  }
+});
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 
