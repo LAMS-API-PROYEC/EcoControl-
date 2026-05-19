@@ -314,8 +314,8 @@ tr:hover td{background:var(--gr50)}
     <p>Registra pesos, gestiona fotos y genera reportes para múltiples empresas desde cualquier dispositivo.</p>
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
-      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas en los reportes</span></div>
+      <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos en Google Sheets</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a Google Drive</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -361,7 +361,10 @@ tr:hover td{background:var(--gr50)}
   <div class="sidebar" id="sidebar">
     <div class="sb-logo">
       <div class="sb-logo-icon"><i class="ti ti-recycle"></i></div>
-      <span>EcoControl</span>
+      <div>
+        <div style="font-family:'Space Grotesk';font-size:.95rem;font-weight:700;line-height:1.2">EcoControl</div>
+        <div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px" id="sb-empresa-nombre"></div>
+      </div>
     </div>
     <select class="co-select" id="co-select" onchange="switchCompany(this.value)" style="display:none"></select>
     <nav class="sb-nav">
@@ -372,8 +375,9 @@ tr:hover td{background:var(--gr50)}
       <span class="ns-title">Análisis</span>
       <div class="nav-item" onclick="showPage('reportes')" id="n-reportes"><i class="ti ti-chart-bar"></i>Reportes</div>
       <span class="ns-title" id="ns-admin" style="display:none">Administración</span>
+      <div class="nav-item" onclick="showPage('empresas')" id="n-empresas" style="display:none"><i class="ti ti-building-factory"></i>Empresas</div>
       <div class="nav-item" onclick="showPage('usuarios')" id="n-usuarios" style="display:none"><i class="ti ti-users"></i>Usuarios</div>
-      <div class="nav-item" onclick="showPage('config')" id="n-config" style="display:none"><i class="ti ti-settings"></i>Configuración API</div>
+      <div class="nav-item" onclick="showPage('config')" id="n-config" style="display:none"><i class="ti ti-settings"></i>Configuración</div>
     </nav>
     <div class="sb-footer">
       <div class="user-badge">
@@ -498,6 +502,23 @@ tr:hover td{background:var(--gr50)}
         </div>
       </div>
       <div id="rep-empty" class="empty"><i class="ti ti-chart-pie"></i><p>Selecciona un período y genera el reporte</p></div>
+    </div>
+
+    <!-- EMPRESAS -->
+    <div class="content page" id="page-empresas">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem">
+          <h3 style="font-size:14px;display:flex;align-items:center;gap:7px"><i class="ti ti-building-factory" style="color:var(--g600)"></i>Empresas registradas</h3>
+          <button class="btn btn-primary btn-sm" onclick="openNewEmpresaModal()" style="width:auto"><i class="ti ti-plus"></i> Nueva empresa</button>
+        </div>
+        <div id="empresas-loader" class="loader"><div class="spin"></div>Cargando...</div>
+        <div class="tw" id="empresas-table" style="display:none">
+          <table>
+            <thead><tr><th>Empresa</th><th>RUC</th><th>Teléfono</th><th>Usuarios</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="empresas-tb"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- USUARIOS -->
@@ -667,6 +688,31 @@ tr:hover td{background:var(--gr50)}
   </div>
 </div>
 
+<!-- Modal Nueva Empresa -->
+<div class="modal-ov" id="m-empresa">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hd">
+      <span class="modal-title" id="m-emp-title">Nueva Empresa</span>
+      <button class="modal-close" onclick="closeM('m-empresa')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-bd">
+      <input type="hidden" id="emp-id">
+      <div class="form-g"><label>Nombre de la empresa *</label><input type="text" id="emp-nombre" class="fc" placeholder="Ej: ReciclaEcuador S.A."></div>
+      <div class="grid2">
+        <div class="form-g"><label>RUC</label><input type="text" id="emp-ruc" class="fc" placeholder="1234567890001"></div>
+        <div class="form-g"><label>Teléfono</label><input type="text" id="emp-tel" class="fc" placeholder="+593..."></div>
+      </div>
+      <div class="form-g"><label>Dirección</label><input type="text" id="emp-dir" class="fc" placeholder="Av. Principal 123"></div>
+      <div class="form-g"><label>Email admin *</label><input type="email" id="emp-email" class="fc" placeholder="admin@empresa.com"></div>
+      <div class="form-g"><label>Contraseña admin *</label><input type="password" id="emp-pass" class="fc" placeholder="Mínimo 6 caracteres"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-secondary btn-sm" onclick="closeM('m-empresa')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEmpresaModal()" style="width:auto"><i class="ti ti-building-plus"></i> Crear empresa</button>
+    </div>
+  </div>
+</div>
+
 <!-- Photo viewer -->
 <div class="modal-ov" id="m-photo" onclick="closeM('m-photo')">
   <div class="modal" style="max-width:700px;background:transparent;box-shadow:none">
@@ -689,8 +735,16 @@ let API_URL = (_savedUrl && _savedUrl.trim()) ? _savedUrl : 'https://script.goog
 // ══════════════════════════════════════════════
 function fmtFecha(iso){
   if(!iso) return '—';
-  const p=iso.split('-');
-  if(p.length!==3) return iso;
+  // Sheets a veces devuelve ISO completo: "2026-05-19T05:00:00.000Z"
+  // o fechas raras como "1899-12-31T..."
+  let str = String(iso);
+  // Si es timestamp ISO, tomar solo la parte de fecha
+  if(str.includes('T')) str = str.split('T')[0];
+  // Si la fecha es claramente inválida (año < 1900), retornar vacío
+  const p = str.split('-');
+  if(p.length !== 3) return String(iso);
+  const yr = parseInt(p[0]);
+  if(yr < 1900) return '—';
   return p[2]+'/'+p[1]+'/'+p[0];
 }
 
@@ -821,9 +875,12 @@ function updateUserUI() {
   document.getElementById('u-avatar').textContent = u.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('co-badge').textContent = c.nombre;
   const isAdmin = u.rol === 'admin';
-  ['ns-admin','n-usuarios','n-config'].forEach(id => {
+  ['ns-admin','n-empresas','n-usuarios','n-config'].forEach(id => {
     document.getElementById(id).style.display = isAdmin ? '' : 'none';
   });
+  // Nombre empresa bajo logo
+  const sbEmp=document.getElementById('sb-empresa-nombre');
+  if(sbEmp) sbEmp.textContent=c.nombre||'';
   // Mostrar selector de empresa solo para admin
   document.getElementById('co-select').style.display = isAdmin ? '' : 'none';
   // Config info
@@ -866,6 +923,7 @@ function renderCurrentPage() {
   if (currentPage === 'dashboard') renderDashboard();
   else if (currentPage === 'registros') renderRegs();
   else if (currentPage === 'materiales') renderMats();
+  else if (currentPage === 'empresas') loadEmpresas();
   else if (currentPage === 'usuarios') loadUsuarios();
 }
 
@@ -878,7 +936,7 @@ function showPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
   document.getElementById('n-' + page)?.classList.add('active');
-  const titles = { dashboard:'Dashboard', registros:'Registros de Peso', materiales:'Materiales', reportes:'Reportes', usuarios:'Usuarios', config:'Configuración API' };
+  const titles = { dashboard:'Dashboard', registros:'Registros de Peso', materiales:'Materiales', reportes:'Reportes', empresas:'Empresas', usuarios:'Usuarios', config:'Configuración' };
   document.getElementById('page-title').textContent = titles[page] || page;
   document.getElementById('btn-new').style.display = page === 'registros' ? '' : 'none';
   const fab=document.getElementById('fab-new'); if(fab) fab.style.display = page==='registros' ? '' : 'none';
@@ -886,6 +944,7 @@ function showPage(page) {
   if (page === 'dashboard') renderDashboard();
   else if (page === 'registros') renderRegs();
   else if (page === 'materiales') renderMats();
+  else if (page === 'empresas') loadEmpresas();
   else if (page === 'usuarios') loadUsuarios();
 }
 
@@ -985,7 +1044,7 @@ function renderRecentTb() {
   const recent=[...S.registros].sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora)).slice(0,8);
   document.getElementById('recent-tb').innerHTML=recent.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">` :'<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
+    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${(()=>{if(!r.fotoUrl) return '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'; const idx='d'+r.id; _photoUrls[idx]=r.fotoUrl; return `<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhotoIdx('${idx}')" onerror="this.style.display='none'">`;})()}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
   }).join('')||'<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-inbox"></i><p>Sin registros</p></td></tr>';
 }
 
@@ -1531,6 +1590,95 @@ function exportToPDF(data,titulo){
 }
 
 // ══════════════════════════════════════════════
+//  EMPRESAS (admin)
+// ══════════════════════════════════════════════
+let _allEmpresas = [];
+
+async function loadEmpresas() {
+  document.getElementById('empresas-loader').style.display='flex';
+  document.getElementById('empresas-table').style.display='none';
+  try {
+    const data = await api('getAllEmpresas', {});
+    _allEmpresas = Array.isArray(data) ? data : [];
+  } catch(e) {
+    showToast('e', 'No se pudieron cargar las empresas: '+e.message);
+    _allEmpresas = [];
+  }
+  renderEmpresas();
+}
+
+function renderEmpresas() {
+  document.getElementById('empresas-loader').style.display='none';
+  document.getElementById('empresas-table').style.display='';
+  const tbody = document.getElementById('empresas-tb');
+  if(!_allEmpresas.length){
+    tbody.innerHTML='<tr><td colspan="6" class="empty" style="padding:1.5rem"><i class="ti ti-building" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px"></i><p>Sin empresas registradas</p></td></tr>';
+    return;
+  }
+  tbody.innerHTML = _allEmpresas.map(e => {
+    const activo = e.estado !== 'inactivo';
+    return `<tr style="opacity:${activo?1:0.6}">
+      <td><div style="display:flex;align-items:center;gap:9px">
+        <span style="width:32px;height:32px;border-radius:8px;background:var(--g50);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:13px;color:var(--g600)">${(e.nombre||'?')[0].toUpperCase()}</span>
+        <div><div style="font-weight:500">${e.nombre||'—'}</div><div style="font-size:11px;color:var(--muted)">${e.email||''}</div></div>
+      </div></td>
+      <td style="font-size:12px">${e.ruc||'—'}</td>
+      <td style="font-size:12px">${e.telefono||'—'}</td>
+      <td><span class="badge badge-b">Ver usuarios</span></td>
+      <td><span class="badge ${activo?'badge-g':'badge-r'}">${activo?'Activa':'Inactiva'}</span></td>
+      <td><div class="row-actions">
+        <button class="icon-btn del" onclick="toggleEmpresa('${e.id}','${e.estado}')" title="${activo?'Desactivar':'Activar'}"><i class="ti ti-${activo?'lock':'lock-open'}"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openNewEmpresaModal() {
+  document.getElementById('emp-id').value='';
+  document.getElementById('m-emp-title').textContent='Nueva Empresa';
+  ['emp-nombre','emp-ruc','emp-tel','emp-dir','emp-email','emp-pass'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  openM('m-empresa');
+}
+
+async function saveEmpresaModal() {
+  const nombre = document.getElementById('emp-nombre').value.trim();
+  const email  = document.getElementById('emp-email').value.trim();
+  const pass   = document.getElementById('emp-pass').value;
+  const ruc    = document.getElementById('emp-ruc').value.trim();
+  const tel    = document.getElementById('emp-tel').value.trim();
+  const dir    = document.getElementById('emp-dir').value.trim();
+  if(!nombre||!email||!pass) return showToast('e','Nombre, email y contraseña son requeridos');
+  if(pass.length<6) return showToast('e','Contraseña mínimo 6 caracteres');
+  try {
+    // Temporarily swap company to register new one
+    const savedToken = S.token;
+    // Use register endpoint - needs no token
+    const res = await fetch(API_URL+'?action=register', {
+      method:'POST',
+      body: JSON.stringify({empresa:nombre, nombre:'Admin', email, pass, telefono:tel, ruc, direccion:dir}),
+      headers:{'Content-Type':'text/plain'}
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error||'Error al crear empresa');
+    showToast('s','Empresa creada correctamente');
+    closeM('m-empresa');
+    await loadEmpresas();
+  } catch(e) { showToast('e', e.message); }
+}
+
+async function toggleEmpresa(id, estadoActual) {
+  const activo = estadoActual !== 'inactivo';
+  if(!confirm(`¿${activo?'Desactivar':'Activar'} esta empresa?`)) return;
+  try {
+    await api('setEstadoEmpresa', {empresaId: id, estado: activo?'inactivo':'activo'});
+    await loadEmpresas();
+    showToast('s', `Empresa ${activo?'desactivada':'activada'}`);
+  } catch(e) { showToast('e', e.message); }
+}
+
+// ══════════════════════════════════════════════
 //  DRIVE THUMBNAIL HELPER
 // ══════════════════════════════════════════════
 function driveThumb(url){
@@ -1569,7 +1717,15 @@ function prevFoto(input){
   r.readAsDataURL(file);
 }
 
-function viewPhoto(src){document.getElementById('photo-full').src=src;openM('m-photo');}
+function viewPhoto(src){
+  const img=document.getElementById('photo-full');
+  img.src=''; // reset first
+  img.src=src;
+  openM('m-photo');
+}
+// Store photo URLs by index to avoid escaping issues in onclick
+const _photoUrls={};
+function viewPhotoIdx(idx){viewPhoto(_photoUrls[idx]);}
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 
