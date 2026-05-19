@@ -476,7 +476,7 @@ tr:hover td{background:var(--gr50)}
           <h3 style="font-size:14px">Tipos de materiales</h3>
           <button class="btn btn-primary btn-sm" onclick="openNewMat()" style="width:auto"><i class="ti ti-plus"></i> Agregar</button>
         </div>
-        <div class="tw"><table><thead><tr><th>Material</th><th>Color</th><th>Unidad</th><th>Total recolectado</th><th>Registros</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="mats-tb"></tbody></table></div>
+        <div class="tw"><table><thead><tr><th>Material</th><th>Unidad</th><th>Total recolectado</th><th>Registros</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="mats-tb"></tbody></table></div>
       </div>
     </div>
 
@@ -1231,8 +1231,13 @@ async function delReg(id) {
 function renderMats() {
   const isAdmin = S.user.rol === 'admin';
   document.getElementById('mats-tb').innerHTML = S.materiales.map(m => {
-    const regs = [...S.registros,...S.pendingQueue].filter(r=>r.materialId===m.id);
-    const total = regs.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
+    // Cruzar por materialId O por nombre (fallback) para mayor compatibilidad
+    const allRegs = [...S.registros, ...S.pendingQueue];
+    const regs = allRegs.filter(r =>
+      r.materialId === m.id ||
+      (!r.materialId && (r.materialNombre||'').toLowerCase() === (m.nombre||'').toLowerCase())
+    );
+    const total = regs.reduce((s,r) => s + (parseFloat(r.peso)||0), 0);
     const activo = m.estado === 'activo';
     const toggleBtn = isAdmin ? `
       <button class="toggle-estado ${activo?'on':'off'}" onclick="toggleMaterial('${m.id}','${m.estado}')" title="${activo?'Desactivar':'Activar'}">
@@ -1241,20 +1246,26 @@ function renderMats() {
       </button>` : `<span class="badge ${activo?'badge-g':'badge-a'}">${m.estado}</span>`;
     return `<tr style="opacity:${activo?1:0.6}">
       <td><div style="display:flex;align-items:center;gap:10px">
-        <span style="width:20px;height:20px;border-radius:6px;background:${m.color};display:inline-block;border:1px solid rgba(0,0,0,.12);flex-shrink:0"></span>
+        <span style="width:28px;height:28px;border-radius:8px;background:${m.color};display:inline-block;border:1px solid rgba(0,0,0,.1);flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15)"></span>
         <strong>${m.nombre}</strong>
       </div></td>
-      <td style="font-family:monospace;font-size:12px">${m.color}</td>
       <td>${m.unidad||'kg'}</td>
-      <td><strong>${total.toFixed(2)}</strong> ${m.unidad||'kg'}</td>
-      <td>${regs.length}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;max-width:120px;height:7px;background:var(--bg2);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${Math.min((total/Math.max(...S.materiales.map(x=>{const rs=allRegs.filter(r=>r.materialId===x.id);return rs.reduce((s,r2)=>s+(parseFloat(r2.peso)||0),0);}),1))*100,100).toFixed(0)}%;background:${m.color};border-radius:4px"></div>
+          </div>
+          <strong>${total.toFixed(1)}</strong> <span style="color:var(--muted);font-size:12px">${m.unidad||'kg'}</span>
+        </div>
+      </td>
+      <td><span style="font-weight:600;color:${regs.length>0?'var(--g700)':'var(--muted)'}">${regs.length}</span></td>
       <td>${toggleBtn}</td>
       <td><div class="row-actions">
         ${isAdmin||S.user.rol==='supervisor'?`<button class="icon-btn edit" onclick="openEditMat('${m.id}')"><i class="ti ti-edit"></i></button>`:''}
         ${isAdmin?`<button class="icon-btn del" onclick="delMat('${m.id}')" title="Eliminar"><i class="ti ti-trash"></i></button>`:''}
       </div></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="empty" style="padding:1.5rem"><i class="ti ti-category" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px"></i><p>Sin materiales</p></td></tr>';
+  }).join('') || '<tr><td colspan="6" class="empty" style="padding:1.5rem"><i class="ti ti-category" style="font-size:32px;opacity:.3;display:block;margin-bottom:8px"></i><p>Sin materiales</p></td></tr>';
 }
 
 async function toggleMaterial(id, estadoActual) {
