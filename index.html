@@ -273,7 +273,7 @@ tr:hover td{background:var(--gr50)}
       <div class="sb-logo-icon"><i class="ti ti-recycle"></i></div>
       <span>EcoControl</span>
     </div>
-    <select class="co-select" id="co-select" onchange="switchCompany(this.value)"></select>
+    <select class="co-select" id="co-select" onchange="switchCompany(this.value)" style="display:none"></select>
     <nav class="sb-nav">
       <span class="ns-title">Principal</span>
       <div class="nav-item active" onclick="showPage('dashboard')" id="n-dashboard"><i class="ti ti-dashboard"></i>Dashboard</div>
@@ -423,26 +423,63 @@ tr:hover td{background:var(--gr50)}
 
     <!-- CONFIG -->
     <div class="content page" id="page-config">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:900px" class="report-grids">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:960px;margin-bottom:1rem" class="report-grids">
+
+        <!-- Datos de empresa -->
         <div class="card">
-          <h3 style="font-size:14px;margin-bottom:1.2rem;display:flex;align-items:center;gap:7px"><i class="ti ti-api" style="color:var(--g600)"></i>URL del API (Apps Script)</h3>
-          <div class="form-g"><label>Web App URL</label><input type="url" id="cfg-url" class="fc" placeholder="https://script.google.com/macros/s/.../exec"></div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6">Pega aquí la URL que obtienes al publicar el Google Apps Script como <strong>Web App</strong>. Acceso: "Cualquier persona".</p>
-          <button class="btn btn-primary btn-sm" onclick="saveAPIUrl()" style="width:auto"><i class="ti ti-device-floppy"></i> Guardar URL</button>
+          <h3 style="font-size:14px;margin-bottom:1.3rem;display:flex;align-items:center;gap:8px">
+            <span style="width:32px;height:32px;border-radius:9px;background:var(--b50);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-building" style="color:var(--b600);font-size:17px"></i>
+            </span>Datos de empresa
+          </h3>
+          <div class="form-g"><label>Nombre de la empresa</label><input type="text" id="cfg-nombre" class="fc"></div>
+          <div class="grid2">
+            <div class="form-g"><label>RUC</label><input type="text" id="cfg-ruc" class="fc" placeholder="1234567890001"></div>
+            <div class="form-g"><label>Teléfono</label><input type="text" id="cfg-tel" class="fc" placeholder="+593..."></div>
+          </div>
+          <div class="form-g"><label>Dirección</label><input type="text" id="cfg-dir" class="fc" placeholder="Av. Principal 123, Ciudad"></div>
+          <button class="btn btn-primary btn-sm" onclick="saveEmpresa()" style="width:auto"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
         </div>
+
+        <!-- Info del sistema -->
         <div class="card">
-          <h3 style="font-size:14px;margin-bottom:1.2rem;display:flex;align-items:center;gap:7px"><i class="ti ti-building" style="color:var(--b400)"></i>Datos de empresa</h3>
-          <div class="form-g"><label>Nombre</label><input type="text" id="cfg-nombre" class="fc"></div>
-          <div class="form-g"><label>RUC</label><input type="text" id="cfg-ruc" class="fc"></div>
-          <div class="form-g"><label>Dirección</label><input type="text" id="cfg-dir" class="fc"></div>
-          <div class="form-g"><label>Teléfono</label><input type="text" id="cfg-tel" class="fc"></div>
-          <button class="btn btn-primary btn-sm" onclick="saveEmpresa()" style="width:auto"><i class="ti ti-device-floppy"></i> Actualizar</button>
+          <h3 style="font-size:14px;margin-bottom:1.3rem;display:flex;align-items:center;gap:8px">
+            <span style="width:32px;height:32px;border-radius:9px;background:var(--g50);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-info-circle" style="color:var(--g600);font-size:17px"></i>
+            </span>Información del sistema
+          </h3>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg);border-radius:9px;border:1px solid var(--border)">
+              <span style="width:34px;height:34px;border-radius:8px;background:var(--g50);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-table" style="color:var(--g600);font-size:18px"></i></span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Base de datos</div><div style="font-size:13px;font-weight:500;margin-top:1px">Google Sheets</div></div>
+              <span class="badge badge-g" style="margin-left:auto">Conectado</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg);border-radius:9px;border:1px solid var(--border)">
+              <span style="width:34px;height:34px;border-radius:8px;background:var(--b50);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-photo" style="color:var(--b600);font-size:18px"></i></span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Almacenamiento fotos</div><div style="font-size:13px;font-weight:500;margin-top:1px">Google Drive</div></div>
+              <span class="badge badge-b" style="margin-left:auto">Activo</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg);border-radius:9px;border:1px solid var(--border)">
+              <span style="width:34px;height:34px;border-radius:8px;background:var(--a50);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-user-shield" style="color:var(--a400);font-size:18px"></i></span>
+              <div><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Tu rol</div><div style="font-size:13px;font-weight:500;margin-top:1px" id="cfg-rol-display">—</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg);border-radius:9px;border:1px solid var(--border)">
+              <span style="width:34px;height:34px;border-radius:8px;background:var(--t50);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-code" style="color:var(--t600);font-size:18px"></i></span>
+              <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Versión</div><div style="font-size:13px;font-weight:500;margin-top:1px">EcoControl v2.0</div></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="card" style="margin-top:1rem;max-width:900px">
-        <h3 style="font-size:14px;margin-bottom:.9rem;display:flex;align-items:center;gap:7px"><i class="ti ti-database" style="color:var(--a400)"></i>Cache local</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;line-height:1.6">Los datos se guardan en el navegador para funcionar sin internet. Al reconectarse se sincronizan con Google Sheets.</p>
-        <div style="display:flex;gap:8px">
+
+      <!-- Cache -->
+      <div class="card" style="max-width:960px">
+        <h3 style="font-size:14px;margin-bottom:.9rem;display:flex;align-items:center;gap:8px">
+          <span style="width:32px;height:32px;border-radius:9px;background:var(--a50);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-database" style="color:var(--a400);font-size:17px"></i>
+          </span>Cache y sincronización
+        </h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;line-height:1.6">Los datos se guardan localmente para funcionar sin internet. Al reconectarse se sincronizan automáticamente con Google Sheets.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary btn-sm" onclick="syncNow()"><i class="ti ti-refresh"></i> Sincronizar ahora</button>
           <button class="btn btn-danger btn-sm" onclick="clearCache()"><i class="ti ti-trash"></i> Limpiar cache</button>
         </div>
@@ -553,6 +590,17 @@ tr:hover td{background:var(--gr50)}
 // ══════════════════════════════════════════════
 const _savedUrl = localStorage.getItem('eco_api_url');
 let API_URL = (_savedUrl && _savedUrl.trim()) ? _savedUrl : 'https://script.google.com/macros/s/AKfycbyGnr0qC7iN4NOyF6e8QdY3_h1bp2eiG7cRHfxLj5UrVujqTjmjiRVKD6EczffU3MQ/exec';
+
+
+// ══════════════════════════════════════════════
+//  DATE HELPERS (Ecuador dd/mm/yyyy)
+// ══════════════════════════════════════════════
+function fmtFecha(iso){
+  if(!iso) return '—';
+  const p=iso.split('-');
+  if(p.length!==3) return iso;
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
 
 // ══════════════════════════════════════════════
 //  STATE
@@ -684,9 +732,12 @@ function updateUserUI() {
   ['ns-admin','n-usuarios','n-config'].forEach(id => {
     document.getElementById(id).style.display = isAdmin ? '' : 'none';
   });
-  // Config defaults
-  document.getElementById('cfg-url').value = API_URL || '';
+  // Mostrar selector de empresa solo para admin
+  document.getElementById('co-select').style.display = isAdmin ? '' : 'none';
+  // Config info
   document.getElementById('cfg-nombre').value = c.nombre || '';
+  const rolDisplay = document.getElementById('cfg-rol-display');
+  if(rolDisplay) rolDisplay.textContent = u.rol.charAt(0).toUpperCase()+u.rol.slice(1);
 }
 
 async function loadAllData() {
@@ -788,7 +839,7 @@ function renderDashboardData(dash) {
       <td>${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td>
-      <td>${r.fotoUrl?`<img src="${r.fotoUrl}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')">` : '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td>
+      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">` : '<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td>
       <td><span class="badge badge-g">✓ Sync</span></td>
     </tr>`;
   }).join('');
@@ -832,7 +883,7 @@ function renderRecentTb() {
   const recent=[...S.registros].sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora)).slice(0,8);
   document.getElementById('recent-tb').innerHTML=recent.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
-    return `<tr><td>${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${r.fotoUrl?`<img src="${r.fotoUrl}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')">` :'<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
+    return `<tr><td>${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td><td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td><td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong> kg</td><td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">` :'<div class="no-photo"><i class="ti ti-photo-off"></i></div>'}</td><td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td></tr>`;
   }).join('')||'<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-inbox"></i><p>Sin registros</p></td></tr>';
 }
 
@@ -874,11 +925,11 @@ function renderRegsTable() {
   tbody.innerHTML=regs.map(r=>{
     const m=S.materiales.find(x=>x.id===r.materialId);
     return `<tr>
-      <td style="white-space:nowrap">${r.fecha}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
+      <td style="white-space:nowrap">${fmtFecha(r.fecha)}<br><span style="font-size:11px;color:var(--muted)">${r.hora||''}</span></td>
       <td><span class="mat-dot" style="background:${m?.color||'#888'}"></span>${r.materialNombre||m?.nombre||'—'}</td>
       <td><strong>${parseFloat(r.peso||0).toFixed(2)}</strong></td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.observaciones||'—'}</td>
-      <td>${r.fotoUrl?`<img src="${r.fotoUrl}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')">`:'<div class="no-photo"><i class="ti ti-camera"></i></div>'}</td>
+      <td>${r.fotoUrl?`<img src="${driveThumb(r.fotoUrl)}" class="photo-thumb" onclick="viewPhoto('${r.fotoUrl}')" onerror="this.parentNode.innerHTML='<div class=no-photo><i class=ti.ti-photo-off></i></div>'">`:'<div class="no-photo"><i class="ti ti-camera"></i></div>'}</td>
       <td><span class="badge ${r._offline?'badge-a':'badge-g'}">${r._offline?'Offline':'Sync'}</span></td>
       <td><div class="row-actions">
         ${canEdit?`<button class="icon-btn edit" onclick="editReg('${r.id}')"><i class="ti ti-edit"></i></button>`:''}
@@ -971,12 +1022,12 @@ async function saveRegistro() {
 }
 
 async function delReg(id) {
-  if(!confirm('¿Eliminar este registro?')) return;
-  // Check if offline
+  if(!confirm('¿Eliminar este registro y su foto?')) return;
   const qIdx=S.pendingQueue.findIndex(r=>r.id===id);
   if(qIdx>=0){ S.pendingQueue.splice(qIdx,1); C.set('queue_'+S.company.id,S.pendingQueue); }
   else {
-    try{ await api('deleteRegistro',{id}); }catch(e){}
+    const reg=S.registros.find(r=>r.id===id);
+    try{ await api('deleteRegistro',{id, deleteFoto: !!(reg&&reg.fotoUrl)}); }catch(e){}
     S.registros=S.registros.filter(r=>r.id!==id);
     C.set('registros_'+S.company.id,S.registros);
   }
@@ -1359,7 +1410,7 @@ function exportToPDF(data,titulo){
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
   doc.text('EcoControl — '+titulo,14,18);
   doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.text(`Empresa: ${c.nombre}  |  Generado: ${new Date().toLocaleDateString('es')}  |  Registros: ${data.length}`,14,26);
+  doc.text(`Empresa: ${c.nombre}  |  Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'})}  |  Registros: ${data.length}`,14,26);
   const totalKg=data.reduce((s,r)=>s+(parseFloat(r.peso)||0),0);
   doc.text(`Peso total: ${totalKg.toFixed(2)} kg`,14,32);
   doc.autoTable({
@@ -1367,7 +1418,7 @@ function exportToPDF(data,titulo){
     head:[['Fecha','Hora','Material','Peso','Unidad','Observaciones','Foto']],
     body:data.map(r=>{
       const m=S.materiales.find(x=>x.id===r.materialId);
-      return[r.fecha,r.hora||'',r.materialNombre||m?.nombre||'—',parseFloat(r.peso||0).toFixed(2),m?.unidad||'kg',r.observaciones||'—',r.fotoUrl?'Ver en Drive':'—'];
+      return[fmtFecha(r.fecha),r.hora||'',r.materialNombre||m?.nombre||'—',parseFloat(r.peso||0).toFixed(2),m?.unidad||'kg',r.observaciones||'—',r.fotoUrl?r.fotoUrl:'Sin foto'];
     }),
     styles:{fontSize:9,cellPadding:3},
     headStyles:{fillColor:[39,80,10],textColor:255},
@@ -1375,6 +1426,17 @@ function exportToPDF(data,titulo){
   });
   doc.save(`EcoControl_${titulo.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
   showToast('s','PDF exportado');
+}
+
+// ══════════════════════════════════════════════
+//  DRIVE THUMBNAIL HELPER
+// ══════════════════════════════════════════════
+function driveThumb(url){
+  if(!url) return '';
+  // Extract Drive file ID and return thumbnail URL
+  const m=url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w120';
+  return url;
 }
 
 // ══════════════════════════════════════════════
