@@ -1427,7 +1427,8 @@ document.querySelectorAll('.modal-ov').forEach(o=>{
 
 // Auto restore session
 window.addEventListener('DOMContentLoaded',()=>{
-  API_URL=localStorage.getItem('eco_api_url')||'';
+  const _saved=localStorage.getItem('eco_api_url');
+  if(_saved&&_saved.trim()) API_URL=_saved;
   const sess=C.get('session');
   if(sess&&sess.token&&sess.user&&sess.company){
     S.token=sess.token; S.user=sess.user; S.company=sess.company;
