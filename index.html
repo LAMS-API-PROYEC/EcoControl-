@@ -321,7 +321,7 @@ tr:hover td{background:var(--gr50)}
     <div class="auth-features">
       <div class="auth-feat"><i class="ti ti-building-factory"></i><span>Multi-empresa y multi-usuario</span></div>
       <div class="auth-feat"><i class="ti ti-table"></i><span>Base de datos encriptada</span></div>
-      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reporte</span></div>
+      <div class="auth-feat"><i class="ti ti-photo"></i><span>Fotos enlazadas a los reportes</span></div>
       <div class="auth-feat"><i class="ti ti-wifi-off"></i><span>Cache offline — trabaja sin internet</span></div>
       <div class="auth-feat"><i class="ti ti-file-type-pdf"></i><span>Reportes PDF y Excel con filtros</span></div>
     </div>
@@ -1676,8 +1676,7 @@ async function exportToPDF(data, titulo){
     }
     const m=S.materiales.find(x=>x.id===r.materialId);
     const rowData=[
-      fmtFecha(r.fecha)+'
-'+fmtHora(r.hora),
+      fmtFecha(r.fecha)+'\n'+fmtHora(r.hora),
       r.creadoNombre||r.usuario||'—',
       r.materialNombre||m?.nombre||'—',
       parseFloat(r.peso||0).toFixed(2),
